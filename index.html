@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday, Zain — Match Report</title>
+<link rel="icon" type="image/png" href="favicon-icon.png" onerror="this.remove()">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&family=Orbitron:wght@500;700;900&family=Noto+Nastaliq+Urdu:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          pitch: { 950: '#050806', 900: '#0a0f0a' },
+          stadium: { green: '#22c55e', red: '#ef4444', gold: '#eab308' }
+        },
+        fontFamily: {
+          teko: ['Teko', 'sans-serif'],
+          digital: ['Orbitron', 'monospace'],
+          urdu: ['"Noto Nastaliq Urdu"', 'serif'],
+          body: ['Inter', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  :root{
+    --neon-green:#22c55e;
+    --scoreboard-red:#ef4444;
+    --glow-gold:#eab308;
+    --glass:rgba(255,255,255,0.05);
+    --glass-border:rgba(255,255,255,0.12);
+  }
+  *{ -webkit-tap-highlight-color: transparent; }
+  html,body{
+    background:#050806;
+    font-family:'Inter',sans-serif;
+    overflow-x:hidden;
+    min-height:100vh;
+  }
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(34,197,94,0.16), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 85% -10%, rgba(234,179,8,0.10), transparent 60%),
+      linear-gradient(160deg,#050806 0%, #020617 45%, #101312 100%);
+    position:relative;
+  }
+  /* Stadium grass texture overlay */
+  .grass-overlay{
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    opacity:0.06;
+    background-image: repeating-linear-gradient(90deg, #22c55e 0px, #22c55e 40px, #0a3d1f 40px, #0a3d1f 80px);
+    mask-image: linear-gradient(to bottom, transparent, black 40%, black 80%, transparent);
+  }
+
+  /* Optional generated-image layers. Hidden until they load successfully;
+     if the file is missing, onerror removes them and the CSS/SVG fallback shows instead. */
+  #heroBgImg{
+    position:fixed; inset:0; width:100%; height:100%;
+    object-fit:cover; z-index:-1; opacity:0; pointer-events:none;
+    transition: opacity 1s ease;
+  }
+  #heroBgImg.loaded{ opacity:0.55; }
+
+  #grassTextureImg{
+    position:fixed; inset:0; width:100%; height:100%;
+    object-fit:cover; z-index:0; opacity:0; pointer-events:none;
+    mask-image: linear-gradient(to bottom, transparent, black 40%, black 80%, transparent);
+    transition: opacity 1s ease;
+  }
+  #grassTextureImg.loaded{ opacity:0.12; }
+
+  #scoreboardPanelImg{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; border-radius:0.75rem; opacity:0; z-index:-1;
+    transition: opacity 0.6s ease;
+  }
+  #scoreboardPanelImg.loaded{ opacity:0.35; }
+
+  #blessingBgImg{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; border-radius:1.25rem; opacity:0; z-index:-1;
+    transition: opacity 0.8s ease;
+  }
+  #blessingBgImg.loaded{ opacity:0.4; }
+
+  #cakePhoto{
+    display:none;
+    max-width:340px; width:100%; border-radius:1rem;
+  }
+  #cakePhoto.loaded{ display:block; }
+  #cakePhoto.loaded ~ #cakeSvg{ display:none; }
+  .floodlight{
+    position:fixed; width:520px; height:520px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.10), transparent 65%);
+    filter: blur(10px); pointer-events:none; z-index:0;
+    animation: flicker 6s ease-in-out infinite;
+  }
+  .floodlight.fl-1{ top:-220px; left:-120px; }
+  .floodlight.fl-2{ top:-220px; right:-120px; animation-delay:2s; }
+  @keyframes flicker{
+    0%,100%{ opacity:0.7; } 50%{ opacity:1; }
+  }
+
+  .glass-card{
+    background:var(--glass);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border:1px solid var(--glass-border);
+    border-radius:1.25rem;
+    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  .digital{
+    font-family:'Orbitron', monospace;
+    letter-spacing:0.05em;
+  }
+  .teko{ font-family:'Teko', sans-serif; }
+  .urdu{
+    font-family:'Noto Nastaliq Urdu', serif;
+    line-height:2.4;
+    direction: rtl;
+  }
+
+  .stage{ display:none; }
+  .stage.active{ display:flex; }
+
+  .fade-in{ animation: fadeIn 0.6s ease forwards; }
+  .fade-out{ animation: fadeOut 0.5s ease forwards; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes fadeOut{ from{opacity:1;} to{opacity:0; transform:translateY(-8px);} }
+
+  .shake{ animation: shakeCard 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+  @keyframes shakeCard{
+    10%,90%{ transform: translate3d(-2px,0,0); }
+    20%,80%{ transform: translate3d(4px,0,0); }
+    30%,50%,70%{ transform: translate3d(-8px,0,0); }
+    40%,60%{ transform: translate3d(8px,0,0); }
+  }
+
+  .glow-green{ box-shadow: 0 0 20px rgba(34,197,94,0.5); }
+  .glow-red{ box-shadow: 0 0 25px rgba(239,68,68,0.55); }
+  .glow-gold{ box-shadow: 0 0 25px rgba(234,179,8,0.5); }
+
+  .scoreboard-border{
+    border:2px solid rgba(34,197,94,0.35);
+    box-shadow: 0 0 0 1px rgba(34,197,94,0.1), 0 0 30px rgba(34,197,94,0.15), inset 0 0 40px rgba(34,197,94,0.04);
+  }
+
+  /* Shatter overlay */
+  #shatterOverlay{
+    position:fixed; inset:0; z-index:60; pointer-events:none;
+    display:none;
+  }
+  .shard{
+    position:absolute; background:rgba(255,255,255,0.85);
+    opacity:0.9;
+  }
+
+  /* Candle flame */
+  .flame{
+    width:10px; height:22px; border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    background: radial-gradient(circle at 50% 70%, #fff7cc 0%, #ffcf3c 35%, #ff8a00 65%, #ff3d00 100%);
+    box-shadow: 0 0 12px rgba(255,170,0,0.8), 0 0 24px rgba(255,120,0,0.5);
+    animation: flicker-flame 0.4s ease-in-out infinite alternate;
+    transform-origin: bottom center;
+  }
+  @keyframes flicker-flame{
+    0%{ transform: scale(1) rotate(-2deg); }
+    100%{ transform: scale(1.08) rotate(3deg); }
+  }
+  .flame.out{
+    animation:none;
+    opacity:0;
+    transform: scale(0.2);
+    transition: all 0.5s ease;
+  }
+  .smoke{
+    width:4px; height:0px; background:rgba(200,200,200,0.5);
+    border-radius:50%; filter:blur(3px);
+    opacity:0;
+  }
+  .smoke.rise{
+    animation: smokeRise 1.4s ease-out forwards;
+  }
+  @keyframes smokeRise{
+    0%{ height:0px; opacity:0.6; transform:translateY(0) scaleX(1); }
+    100%{ height:60px; opacity:0; transform:translateY(-60px) scaleX(2.2); }
+  }
+
+  ::selection{ background: rgba(34,197,94,0.4); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
+
+  .btn-primary{
+    transition: all 0.2s ease;
+  }
+  .btn-primary:hover{ transform: translateY(-2px); }
+  .btn-primary:active{ transform: translateY(0); }
+
+  .progress-track{
+    height:6px; border-radius:9999px; background:rgba(255,255,255,0.08); overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; background: linear-gradient(90deg, var(--neon-green), var(--glow-gold));
+    transition: width 0.5s ease;
+  }
+</style>
+</head>
+<body class="text-white">
+
+<!-- Optional generated background images: drop matching files next to index.html.
+     If a file is missing, it's removed automatically and the CSS fallback (gradient/stripes) is used. -->
+<img id="heroBgImg" src="bg-hero.jpeg" alt=""
+     onload="this.classList.add('loaded')" onerror="this.remove()">
+<img id="grassTextureImg" src="grass-texture.jpeg" alt=""
+     onload="this.classList.add('loaded')" onerror="this.remove()">
+
+<div class="grass-overlay"></div>
+<div class="floodlight fl-1"></div>
+<div class="floodlight fl-2"></div>
+<div id="shatterOverlay"></div>
+
+<!-- Audio elements (place mp3 files alongside this HTML file) -->
+<audio id="audAmbient" src="stadium_ambient.mp3" loop preload="auto"></audio>
+<audio id="audWrong" src="meme_wrong.mp3" preload="auto"></audio>
+<audio id="audCrack" src="bat_crack.mp3" preload="auto"></audio>
+<audio id="audBg" src="bg_music.mp3" loop preload="auto"></audio>
+
+<!-- Sound toggle -->
+<button id="soundToggle" class="fixed top-4 right-4 z-50 w-11 h-11 rounded-full glass-card flex items-center justify-center text-lg">🔊</button>
+
+<main class="relative z-10 min-h-screen w-full flex items-center justify-center p-4">
+
+  <!-- STAGE 0: INTRO -->
+  <section id="stage-intro" class="stage active fade-in w-full max-w-xl">
+    <div class="glass-card scoreboard-border p-8 md:p-10 text-center">
+      <p class="digital text-stadium-gold text-sm tracking-widest mb-2" style="color:var(--glow-gold)">LIVE MATCH REPORT</p>
+      <h1 class="teko text-5xl md:text-6xl font-semibold leading-none mb-4">
+        THE <span style="color:var(--scoreboard-red)">ZAIN</span> REALITY CHECK
+      </h1>
+      <p class="text-white/70 mb-6 leading-relaxed">Before any birthday cake gets served tonight, the umpire requires a full, honest, on-the-record confession. 15 questions. No appeals. No DRS.</p>
+      <button id="startBtn" class="btn-primary w-full py-4 rounded-xl teko text-2xl tracking-wide" style="background:var(--neon-green); color:#04150a;">
+        STEP UP TO THE CREASE
+      </button>
+    </div>
+  </section>
+
+  <!-- STAGE 1: QUIZ -->
+  <section id="stage-quiz" class="stage w-full max-w-2xl">
+    <div class="glass-card scoreboard-border p-6 md:p-9" id="quizCard">
+      <div class="flex items-center justify-between mb-3">
+        <span class="digital text-xs tracking-widest text-white/50" id="sectionLabel">SECTION</span>
+        <span class="relative digital text-xs tracking-widest px-2 py-1 rounded overflow-hidden" style="color:var(--neon-green)" id="ballCounter">
+          <img src="scoreboard-panel.jpeg" alt="" id="scoreboardPanelImg"
+               onload="this.classList.add('loaded')" onerror="this.remove()">
+          <span class="relative z-10">BALL 1 / 15</span>
+        </span>
+      </div>
+      <div class="progress-track mb-6">
+        <div class="progress-fill" id="progressFill" style="width:6.6%"></div>
+      </div>
+
+      <p class="urdu text-2xl md:text-3xl mb-7" id="questionText"></p>
+
+      <div class="space-y-4" id="optionsWrap">
+        <button class="option-btn btn-primary w-full text-right urdu text-xl p-4 rounded-xl glass-card hover:border-white/30" data-opt="A"></button>
+        <button class="option-btn btn-primary w-full text-right urdu text-xl p-4 rounded-xl glass-card hover:border-white/30" data-opt="B"></button>
+      </div>
+
+      <div id="roastAlert" class="hidden mt-6 p-5 rounded-xl border urdu text-lg leading-loose" style="background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.4); color:#fecaca;"></div>
+    </div>
+  </section>
+
+  <!-- STAGE 2A: COUNTDOWN -->
+  <section id="stage-countdown" class="stage w-full max-w-md">
+    <div class="text-center w-full">
+      <p class="digital text-white/50 tracking-[0.3em] mb-6 text-sm">CALCULATING FINAL VERDICT</p>
+      <div id="countdownNum" class="digital font-black" style="font-size:9rem; color:var(--scoreboard-red); text-shadow:0 0 40px rgba(239,68,68,0.7);">3</div>
+    </div>
+  </section>
+
+  <!-- STAGE 2B: INSULT DROP -->
+  <section id="stage-insult" class="stage w-full max-w-2xl">
+    <div class="glass-card p-6 md:p-9" style="border-color:rgba(239,68,68,0.5);">
+      <div class="text-center mb-6 p-5 rounded-xl glow-red" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.5);">
+        <p class="digital text-2xl md:text-3xl font-black tracking-wide" style="color:var(--scoreboard-red)">MATCH OVER</p>
+        <p class="teko text-3xl md:text-4xl mt-1">WINNER: <span style="color:var(--neon-green)">AHMAD</span> &nbsp;·&nbsp; LOSER: <span style="color:var(--scoreboard-red)">ZAIN</span></p>
+      </div>
+      <p class="urdu text-xl leading-loose text-white/90 mb-7" id="insultText"></p>
+      <button id="continueToCake" class="btn-primary w-full py-4 rounded-xl teko text-2xl" style="background:var(--glow-gold); color:#241a00;">
+        ٹھیک اے، اگے ول چلیے
+      </button>
+    </div>
+  </section>
+
+  <!-- STAGE 3: CAKE -->
+  <section id="stage-cake" class="stage w-full max-w-xl flex-col items-center">
+    <div class="text-center mb-4 fade-in">
+      <p class="digital text-sm tracking-widest mb-2" style="color:var(--glow-gold)">FINAL OVER</p>
+      <h2 class="teko text-4xl md:text-5xl">BLOW OUT THE CANDLES</h2>
+      <p class="text-white/60 mt-2 text-sm">We'll ask for your mic — blow into it like a match-winning sixer.</p>
+    </div>
+
+    <div id="cakeStand" class="relative mt-6 select-none flex flex-col items-center">
+      <img id="cakePhoto" src="cake-stadium.jpeg" alt="Stadium birthday cake"
+           onload="this.classList.add('loaded')" onerror="this.remove()">
+      <svg id="cakeSvg" viewBox="0 0 360 280" width="320" height="250" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="tier1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#166534"/>
+            <stop offset="100%" stop-color="#14532d"/>
+          </linearGradient>
+          <linearGradient id="tier2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#22c55e"/>
+            <stop offset="100%" stop-color="#15803d"/>
+          </linearGradient>
+          <linearGradient id="tier3" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#eab308"/>
+            <stop offset="100%" stop-color="#a16207"/>
+          </linearGradient>
+        </defs>
+        <ellipse cx="180" cy="255" rx="140" ry="14" fill="#000" opacity="0.35"/>
+        <rect x="55" y="190" width="250" height="55" rx="10" fill="url(#tier1)" stroke="#0a3d1f" stroke-width="2"/>
+        <rect x="90" y="140" width="180" height="55" rx="10" fill="url(#tier2)" stroke="#0a3d1f" stroke-width="2"/>
+        <rect x="125" y="95" width="110" height="50" rx="10" fill="url(#tier3)" stroke="#7c5b06" stroke-width="2"/>
+        <g stroke="#fff" stroke-width="2" opacity="0.5">
+          <line x1="55" y1="205" x2="305" y2="205"/>
+          <line x1="90" y1="155" x2="270" y2="155"/>
+          <line x1="125" y1="112" x2="235" y2="112"/>
+        </g>
+      </svg>
+      <div id="candleRow" class="absolute flex gap-5" style="top:-30px; left:50%; transform:translateX(-50%);"></div>
+      <div class="absolute -top-16 left-1/2 -translate-x-1/2 glass-card px-4 py-2 rounded-xl glow-gold">
+        <p class="teko text-xl whitespace-nowrap">Happy Birthday, Loser ZAIN!</p>
+      </div>
+    </div>
+
+    <div class="mt-8 flex flex-col items-center gap-3">
+      <p id="micStatus" class="digital text-xs tracking-widest text-white/50">REQUESTING MIC...</p>
+      <button id="tapBlowBtn" class="btn-primary px-8 py-3 rounded-xl teko text-xl" style="background:var(--neon-green); color:#04150a;">
+        TAP TO BLOW 💨
+      </button>
+    </div>
+  </section>
+
+  <!-- STAGE 4: BLESSING -->
+  <section id="stage-blessing" class="stage w-full max-w-2xl">
+    <div class="relative glass-card glow-gold p-8 md:p-11 fade-in overflow-hidden">
+      <img src="blessing-bg.jpeg" alt="" id="blessingBgImg"
+           onload="this.classList.add('loaded')" onerror="this.remove()">
+      <p class="relative z-10 teko text-3xl md:text-4xl mb-5">Happy Birthday, My Brother! 👑</p>
+      <p class="relative z-10 text-white/85 leading-relaxed mb-4">
+        Let's be completely honest—your bowling over consists of more wide balls than a local street match, your fielding is an absolute disaster, and your dream of hitting a perfect helicopter shot or matching Babar Azam's cover drive will probably remain a dream forever. You have never won a match against me, and today, you officially admitted it online for the world to see!
+      </p>
+      <p class="relative z-10 text-white/85 leading-relaxed mb-4">
+        But jokes aside, you are hands down the greatest best friend a person could ask for in this lifetime. No matter how chaotic life gets, or how badly we argue on the cricket field, you are the one person I can always count on without a second thought. Thank you for tolerating my endless roasts, for standing by me through thick and thin, and for bringing so much laughter into my life.
+      </p>
+      <p class="relative z-10 text-white/85 leading-relaxed mb-4">
+        I pray that Almighty Allah blesses you with endless happiness, perfect health, outstanding success in every single area of your life, and may He finally give you some coordination to catch a cricket ball! May our brotherhood stay strong forever.
+      </p>
+      <p class="relative z-10 teko text-2xl" style="color:var(--glow-gold)">Have an unforgettable day, my brother. Happy Birthday, Zain! 🎂❤️</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ================= AUDIO MANAGER ================= */
+const audioManager = (() => {
+  const ambient = document.getElementById('audAmbient');
+  const wrong = document.getElementById('audWrong');
+  const crack = document.getElementById('audCrack');
+  const bg = document.getElementById('audBg');
+  ambient.volume = 0.15;
+  wrong.volume = 1.0;
+  crack.volume = 1.0;
+  bg.volume = 0.0;
+
+  let unlocked = false;
+  let muted = false;
+
+  function unlock(){
+    if (unlocked) return;
+    unlocked = true;
+    ambient.play().catch(()=>{});
+  }
+
+  function playWrong(){
+    if (muted) return;
+    try{ wrong.currentTime = 0; wrong.play().catch(()=>{}); }catch(e){}
+  }
+
+  function playCrack(){
+    if (muted) return;
+    try{ crack.currentTime = 0; crack.volume = 1.0; crack.play().catch(()=>{}); }catch(e){}
+  }
+
+  function crossfadeToBg(){
+    let steps = 20;
+    let i = 0;
+    bg.volume = 0;
+    bg.play().catch(()=>{});
+    const iv = setInterval(()=>{
+      i++;
+      ambient.volume = Math.max(0, 0.15 * (1 - i/steps));
+      bg.volume = Math.min(0.6, 0.6 * (i/steps));
+      if (i >= steps){
+        clearInterval(iv);
+        try{ ambient.pause(); }catch(e){}
+      }
+    }, 100);
+  }
+
+  function toggleMute(){
+    muted = !muted;
+    [ambient, wrong, crack, bg].forEach(a => a.muted = muted);
+    return muted;
+  }
+
+  return { unlock, playWrong, playCrack, crossfadeToBg, toggleMute };
+})();
+
+document.addEventListener('click', () => audioManager.unlock(), { once:true });
+
+document.getElementById('soundToggle').addEventListener('click', function(){
+  const muted = audioManager.toggleMute();
+  this.textContent = muted ? '🔇' : '🔊';
+});
+
+/* ================= QUIZ DATA ================= */
+const questions = [
+  {
+    section: "کرکٹ دا جنازہ - Batting Roast",
+    q: `زین جدوں ہتھ وِچ بیٹ پھڑ کے گراؤنڈ وِچ وڑدا اے، تے اوہ اپنے آپ نوں کی سمجھدا اے؟`,
+    a: `شاہی کلاسک کنگ بابر اعظم`,
+    b: `پنڈ دا سب توں وڈا مچھر مار ککڑ`,
+    roast: `ہاہاہا! بابر اعظم؟ اوئے زین، تیرے ورگے نووب نوں تے بابر اعظم اپنے بیڈ روم دے باہر مکھیاں مارن لئی وی نہ رکھے۔ اپنیاں لتاں دیکھیاں نے کدی؟ پنڈ دا ککڑ وی تیرے توں سو گنا سیدھا بھج لیندا اے۔ دوجا آپشن دبا تے اوقات وِچ آ!`
+  },
+  {
+    section: "کرکٹ دا جنازہ - Batting Roast",
+    q: `احمد دی بالنگ تے زین دا کلاسک 'ہیلی کاپٹر شاٹ' اصل وِچ کیسا ہندا اے؟`,
+    a: `ایم ایس دھونی ورگا شاندار`,
+    b: `سِدھا کلین بولڈ ہونا تے کہنا 'یار بال نیویں رہ گئی سی'`,
+    roast: `ہیلی کاپٹر شاٹ؟ اوئے تیرا ہیلی کاپٹر تے زمین تے کھلوتے ہی کریش ہو جاندا اے۔ توں تے اکھاں بند کر کے جھاڑو ماردا ایں، جیہڑا سِدھا وکٹ وِچ وجدا اے۔ چل جھوٹیا، دوجا آپشن سلیکٹ کر!`
+  },
+  {
+    section: "کرکٹ دا جنازہ - Batting Roast",
+    q: `زین دا فِلک (Flick) شاٹ اصل وِچ کیسا دکھدا اے؟`,
+    a: `ویرات کوہلی ورگا نفاست نال بھریا`,
+    b: `جیویں کوئی بندہ تپدی دھپ وِچ مکھیاں اڑا رہا ہووے`,
+    roast: `کوہلی دا فِلک کلائیاں نال ہندا اے، تے تیرا فِلک اینج ہندا اے جیویں کوئی پاگل کتے توں ڈر کے لتّاں مار رہا ہووے! دوجا آپشن دبا، شرم کر تھوڑی!`
+  },
+  {
+    section: "کرکٹ دا جنازہ - Batting Roast",
+    q: `زین دا کور ڈرائیو (Cover Drive) دیکھ کے امپائر کی اشارہ کردا اے؟`,
+    a: `چوکے دا شاندار اشارہ`,
+    b: `اپنے سر تے ہتھ رکھ کے کہندا اے 'یا اللہ! ایدی لت تے بیٹ دونوں توڑ دے تاکہ روز دا تماشہ ختم ہووے'`,
+    roast: `چوکا؟ اوئے تیرا بال تے پچ توں باہر نہیں جاندی! توں پچھلے تین سالاں توں صرف ہوا وِچ بیٹ گھما کے پنڈ دی مٹی اڑا رہا ایں۔ دوجا آپشن دبا تے جاہل پن بند کر!`
+  },
+  {
+    section: "بالنگ دا تماشہ - Bowling Roast",
+    q: `انٹرنیشنل کرکٹ دے قانون مطابق اک اوور وِچ کِنیاں بالاں ہندیاں نے؟`,
+    a: `6 بالاں`,
+    b: `15 بالاں (زین دا اسپیشل اوور: 6 وائڈ، 3 نو-بالاں تے 6 رونے)`,
+    roast: `اوئے تیرے لئی 6 ballan دا اوور کدی تریخ وِچ نہیں ہویا! تیرا اوور صبح شروع ہندا اے تے شام دی روٹی دے ٹائم مکتدا اے۔ پورا پنڈ تیرے اوور توں تنگ اے کیونکہ توں بالاں گھٹ تے وائڈاں زیادہ کرواندا ایں۔ 15 بالاں والا آپشن دبا، اوئے تاہیات وائڈ کنگ!`
+  },
+  {
+    section: "بالنگ دا تماشہ - Bowling Roast",
+    q: `جدوں زین پورے زور نال بال کرواندا اے، تے بال کتھے جاندی اے؟`,
+    a: `سِدھی وکٹاں وِچ`,
+    b: `پنڈ دے چاچے دی دکان دے شیشے توڑدی اے یا دوجی پیلی وِچ جاندی اے`,
+    roast: `پورے زور نال توں بال نہیں کرواندا، توں بس منہ توں آوازاں کڈدا ایں 'ائیں اوئیں۔' بال تیری کدی پچ تے ٹپا نہیں کھاندی، سِدھی چاچے دے سر وِچ وجدی اے۔ دوجا آپشن سلیکٹ کر!`
+  },
+  {
+    section: "بالنگ دا تماشہ - Bowling Roast",
+    q: `احمد دی بیٹنگ دیکھ کے زین دے اندروں کیڑی آواز آندی اے؟`,
+    a: `'میں ایہنوں آؤٹ کر دیاں گا'`,
+    b: `'یا اللہ! مینوں بچا لے، ایدی بال میرے منہ تے نہ وج جائے'`,
+    roast: `آؤٹ کرے گا توں؟ توں تے احمد نوں دیکھ کے بال سِٹن توں پہلے ہی معافیاں منگنا شروع کر دیندا ایں! دوجا آپشن دبا تے اپنی گِلی پوزیشن قبول کر!`
+  },
+  {
+    section: "بالنگ دا تماشہ - Bowling Roast",
+    q: `زین دی بالنگ سپیڈ (Speed) نوں کس چیز نال تشبیہ دتی جا سکدی اے؟`,
+    a: `شعیب اختر دی راکٹ سپیڈ`,
+    b: `پنڈ وِچ گھمدی ہوئی بُڈھی مجھ (بھینس) دی رفتار`,
+    roast: `تیری بالنگ دی سپیڈ دیکھ کے بیٹسمین شاٹ مارن توں پہلے چائے پی لیندا اے! اینی ہولی بال تے بچہ وی روٹی کھاندے کھاندے چھکا مار دیوے۔ مجھ والا آپشن سلیکٹ کر!`
+  },
+  {
+    section: "فیلڈنگ دا سیاپا - Fielding Roast",
+    q: `زین نے اپنی پوری زندگی وِچ کِنے کیچ (Catch) پھڑے نیں؟`,
+    a: `100 توں زیادہ`,
+    b: `انڈہ (0) - کیچ آوندا اے تے اے اکھاں بند کر لیندا اے`,
+    roast: `تیرے ہتھ نیں یا مکھن دے پیڑے؟ تیرے ہتھ وِچ کوئی پانی دا گلاس نہ دیوے، توں کیچ پھڑے گا؟ بال آوندی اے تے توں اینج بھجدا ایں جیویں پنڈ وِچ پولیس آ گئی ہووے! زیرو والا بٹن دبا!`
+  },
+  {
+    section: "فیلڈنگ دا سیاپا - Fielding Roast",
+    q: `زین نوں میچ وِچ سب توں پیچھے باؤنڈری لائن تے کیوں کھڑا کیتا جاندا اے؟`,
+    a: `باؤنڈریاں بچان لئی`,
+    b: `تاکہ اے بال توں دور رہے تے اتھے کھلو کے چھان وِچ موبائل چلا سکے`,
+    roast: `باؤنڈری بچانا تیرے بس دا روگ نہیں! تینوں ایدی لئی پیچھے کھڑائی دا اے تاکہ توں گراؤنڈ وِچ نقصان گھٹ کریں تے دور کھلو کے کُڑیاں تاڑ سکیں۔ دوجا آپشن دبا، اوئے ویلے fieldra!`
+  },
+  {
+    section: "فیلڈنگ دا سیاپا - Fielding Roast",
+    q: `جے بال زین ول سِدھی زمین تے رُڑھدی ہوئی آئے، تے اے کی کردا اے؟`,
+    a: `چیتے ورگی ڈائیو (Dive) مار کے بال روکنا`,
+    b: `لتّاں کھول کے کھڑا ہو جانا جیویں تلاشی دے رہا ہووے تے بال لتّاں دے وچوں لنگھ جاندی اے`,
+    roast: `ڈائیو؟ توں جے ڈائیو ماری تے تیرا جبڑا گراؤنڈ وِچ ہی رہ جائے گا۔ توں لتّاں کھول کے کھڑا ہنا ایں تے بال پیچھے چار رن لئی لنگھ جاندی اے تے توں امپائر نوں دیکھدا ایں جھوٹے انسان! دوجا آپشن سلیکٹ کر!`
+  },
+  {
+    section: "عام ذلت تے گھریلو تباہی - Total Humiliation",
+    q: `زین مہنگے مہنگے بیٹ تے کرکٹ کِٹ کیوں خریددا اے؟`,
+    a: `اپنا کھیل بہتر کرن لئی`,
+    b: `گراؤنڈ وِچ صرف امیر دکھن لئی، اندروں کِٹ وِچ صرف جوس دے ڈبے ہندے نیں`,
+    roast: `کِٹ اینج چُکی ہوندی اے جیویں پاکستان ٹیم دا سلیکٹر اے۔ تے وچوں نکلدا کی اے؟ اک ٹُٹیا ہویا بیٹ تے مَیاں دے دتے ہوئے پراٹھے! دوجا آپشن دبا، اوئے شوخے!`
+  },
+  {
+    section: "عام ذلت تے گھریلو تباہی - Total Humiliation",
+    q: `میچ ہارن توں بعد زین دا سب توں گھٹیا بہانہ کیڑا ہندا اے؟`,
+    a: `'میرا پیٹ خراب سی'`,
+    b: `'میں تے صرف ٹرائی بال کھیڈ رہا سی' (چاہے پورے 20 اوور کیوں نہ مک گئے ہون)`,
+    roast: `اوئے توں تے پوری زندگی ہی ٹرائی بال تے گزار دتی اے! تیرا اصل میچ کدی آونا وی نہیں اے۔ پکا مکار ایں توں۔ دوجا آپشن دبا تے سچائی قبول کر!`
+  },
+  {
+    section: "عام ذلت تے گھریلو تباہی - Total Humiliation",
+    q: `جے پنڈ دی ٹیم زین نوں ہمیشہ لئی باہر کڈ دیوے، تے ٹیم دا کی فائدہ ہوئے گا؟`,
+    a: `ٹیم اداس ہو جائے گی`,
+    b: `ٹیم لگاتار میچ جِتے گی تے گراؤنڈ دا ماحول وی پاک ہو جائے گا`,
+    roast: `تیرے جان نال تے پنڈ وِچ مٹھائیاں ونڈیاں جان گیاں! تیرے وائڈ بالاں دے جرمانے ختم ہون گے تے ٹیم سکون دا ساہ لوے گی۔ دوجا آپشن سلیکٹ کر!`
+  },
+  {
+    section: "عام ذلت تے گھریلو تباہی - Total Humiliation",
+    q: `اپنی سالگرہ دا گفٹ انلاک کرن لئی آخری تے قانونی سچائی تے کلک کرو:`,
+    a: `احمد میرا کرکٹ دا ابا (گرو) اے تے میں اوہدا پکا شاگرد آں`,
+    b: `میں مندا واں کہ میں کرکٹ دا سب توں وڈا نووب (Noob) آں`,
+    roast: `توں دونوں وچوں جیہڑا مرضی بٹن دبا، تیری تلاشی مکمل ہو گئی اے پتر!`
+  },
+];
+
+const insultText = `لو جی! انٹرنیٹ دی تاریخ دا سب توں وڈا اعترافِ جرم! زین پتر، توں ڈیجیٹلی تے قانونی طور تے من لیا اے کہ توں کرکٹ دا سب توں وڈا کچرا ایں تے احمد تیرا گرو اے۔ 15 واری توں اپنی تلاشی خود اپنے ہتھاں نال کلک کر کے کروائی اے۔ ہن ایہ ریکارڈ انٹرنیٹ تے ہمیشہ لئی سیو ہو گیا اے! چل ہن روونا بند کر، تیرا جنم دن اے، اینی کُٹ کافی اے۔`;
+
+/* ================= STAGE CONTROL ================= */
+const stages = ['stage-intro','stage-quiz','stage-countdown','stage-insult','stage-cake','stage-blessing'];
+function goToStage(id){
+  stages.forEach(s => {
+    const el = document.getElementById(s);
+    if (s === id){
+      el.classList.add('active');
+      el.classList.remove('fade-out');
+      el.classList.add('fade-in');
+    } else {
+      el.classList.remove('active','fade-in');
+    }
+  });
+}
+
+/* ================= QUIZ LOGIC ================= */
+let currentIndex = 0;
+
+function renderQuestion(){
+  const item = questions[currentIndex];
+  document.getElementById('sectionLabel').textContent = item.section;
+  document.querySelector('#ballCounter .relative.z-10').textContent = `BALL ${currentIndex+1} / 15`;
+  document.getElementById('progressFill').style.width = `${((currentIndex+1)/15*100)}%`;
+  document.getElementById('questionText').textContent = item.q;
+
+  const btnA = document.querySelector('[data-opt="A"]');
+  const btnB = document.querySelector('[data-opt="B"]');
+  btnA.textContent = item.a;
+  btnB.textContent = item.b;
+  btnA.onclick = () => handleAnswer(false, item.roast);
+  btnB.onclick = () => handleAnswer(true, item.roast);
+
+  document.getElementById('roastAlert').classList.add('hidden');
+}
+
+function handleAnswer(isCorrect, roast){
+  const card = document.getElementById('quizCard');
+  if (!isCorrect){
+    audioManager.playWrong();
+    card.classList.remove('shake');
+    void card.offsetWidth;
+    card.classList.add('shake');
+    const alertBox = document.getElementById('roastAlert');
+    alertBox.textContent = roast;
+    alertBox.classList.remove('hidden');
+    return;
+  }
+  // correct — advance
+  if (currentIndex < questions.length - 1){
+    currentIndex++;
+    renderQuestion();
+  } else {
+    startCountdown();
+  }
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  audioManager.unlock();
+  currentIndex = 0;
+  renderQuestion();
+  goToStage('stage-quiz');
+});
+
+/* ================= COUNTDOWN ================= */
+function startCountdown(){
+  goToStage('stage-countdown');
+  let n = 3;
+  const numEl = document.getElementById('countdownNum');
+  numEl.textContent = n;
+  const iv = setInterval(() => {
+    n--;
+    if (n > 0){
+      numEl.textContent = n;
+      numEl.classList.remove('fade-in');
+      void numEl.offsetWidth;
+      numEl.classList.add('fade-in');
+    } else {
+      clearInterval(iv);
+      showInsult();
+    }
+  }, 900);
+}
+
+function showInsult(){
+  document.getElementById('insultText').textContent = insultText;
+  goToStage('stage-insult');
+}
+
+document.getElementById('continueToCake').addEventListener('click', () => {
+  shatterTransition(() => {
+    goToStage('stage-cake');
+    buildCandles();
+    initMic();
+  });
+});
+
+/* ================= GLASS SHATTER TRANSITION ================= */
+function shatterTransition(callback){
+  const overlay = document.getElementById('shatterOverlay');
+  overlay.innerHTML = '';
+  overlay.style.display = 'block';
+  const rows = 5, cols = 7;
+  const w = window.innerWidth, h = window.innerHeight;
+  for (let r = 0; r < rows; r++){
+    for (let c = 0; c < cols; c++){
+      const shard = document.createElement('div');
+      shard.className = 'shard';
+      const sw = w/cols, sh = h/rows;
+      shard.style.left = (c*sw) + 'px';
+      shard.style.top = (r*sh) + 'px';
+      shard.style.width = sw + 'px';
+      shard.style.height = sh + 'px';
+      shard.style.clipPath = `polygon(${Math.random()*20}% ${Math.random()*20}%, 100% 0%, 100% 100%, 0% 100%)`;
+      shard.style.transition = 'transform 0.7s cubic-bezier(.5,0,.75,0), opacity 0.7s ease';
+      overlay.appendChild(shard);
+      requestAnimationFrame(() => {
+        const dx = (Math.random()-0.5)*600;
+        const dy = (Math.random()-0.5)*600 + 200;
+        const rot = (Math.random()-0.5)*90;
+        setTimeout(() => {
+          shard.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
+          shard.style.opacity = '0';
+        }, (r+c)*10);
+      });
+    }
+  }
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    callback();
+  }, 750);
+}
+
+/* ================= CAKE / CANDLES ================= */
+function buildCandles(){
+  const row = document.getElementById('candleRow');
+  row.innerHTML = '';
+  const count = 5;
+  for (let i = 0; i < count; i++){
+    const wrap = document.createElement('div');
+    wrap.className = 'flex flex-col items-center';
+    const smoke = document.createElement('div');
+    smoke.className = 'smoke';
+    const flame = document.createElement('div');
+    flame.className = 'flame';
+    const stick = document.createElement('div');
+    stick.style.width = '6px';
+    stick.style.height = '34px';
+    stick.style.background = i % 2 === 0 ? '#ef4444' : '#eab308';
+    stick.style.borderRadius = '2px';
+    wrap.appendChild(smoke);
+    wrap.appendChild(flame);
+    wrap.appendChild(stick);
+    row.appendChild(wrap);
+  }
+}
+
+let candlesOut = false;
+function extinguishCandles(){
+  if (candlesOut) return;
+  candlesOut = true;
+  document.querySelectorAll('.flame').forEach(f => f.classList.add('out'));
+  document.querySelectorAll('.smoke').forEach(s => s.classList.add('rise'));
+  audioManager.playCrack();
+  fireFireworks();
+  audioManager.crossfadeToBg();
+  document.getElementById('micStatus').textContent = 'SIXER! CANDLES OUT 🎉';
+  document.getElementById('tapBlowBtn').classList.add('hidden');
+  setTimeout(() => {
+    goToStage('stage-blessing');
+  }, 3200);
+}
+
+function fireFireworks(){
+  const duration = 2500;
+  const end = Date.now() + duration;
+  const colors = ['#22c55e', '#ef4444', '#eab308', '#ffffff'];
+  (function frame(){
+    confetti({ particleCount: 6, angle: 60, spread: 65, origin: { x: 0 }, colors });
+    confetti({ particleCount: 6, angle: 120, spread: 65, origin: { x: 1 }, colors });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  })();
+  confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 }, colors });
+}
+
+document.getElementById('tapBlowBtn').addEventListener('click', extinguishCandles);
+
+/* ================= MIC BLOW DETECTION ================= */
+function initMic(){
+  const statusEl = document.getElementById('micStatus');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    statusEl.textContent = 'MIC NOT SUPPORTED — TAP TO BLOW';
+    return;
+  }
+  statusEl.textContent = 'REQUESTING MIC ACCESS...';
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      statusEl.textContent = 'MIC LIVE — BLOW NOW 🎂';
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const threshold = 55;
+      let rafId;
+      function check(){
+        analyser.getByteFrequencyData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) sum += data[i];
+        const avg = sum / data.length;
+        if (avg > threshold && !candlesOut){
+          extinguishCandles();
+          stream.getTracks().forEach(t => t.stop());
+          ctx.close();
+          return;
+        }
+        if (!candlesOut) rafId = requestAnimationFrame(check);
+      }
+      check();
+    })
+    .catch(() => {
+      statusEl.textContent = 'MIC ACCESS DENIED — TAP TO BLOW';
+    });
+}
+</script>
+</body>
+</html>
